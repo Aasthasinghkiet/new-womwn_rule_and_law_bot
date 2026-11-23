@@ -1,28 +1,420 @@
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-<title>Women Law Chatbot</title>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Women Law & Rights Chatbot</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #101116;
+    color: white;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    max-width: 850px;
+    margin: 40px auto;
+}
+
+h1 {
+    text-align: center;
+    font-size: 32px;
+}
+
+.subtitle {
+    text-align: center;
+    color: #aaa;
+    margin-bottom: 30px;
+}
+
+.chat-container {
+    background: #191b24;
+    padding: 20px;
+    border-radius: 14px;
+    border: 1px solid #333;
+}
+
+#chatbox {
+    height: 480px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 10px;
+}
+
+.message {
+    padding: 14px;
+    border-radius: 12px;
+    max-width: 85%;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.user {
+    background: #343b61;
+    color: white;
+    align-self: flex-end;
+}
+
+.bot {
+    background: #183c2d;
+    color: #65e99a;
+    align-self: flex-start;
+}
+
+.error {
+    background: #482426;
+    color: #ff8585;
+    align-self: flex-start;
+}
+
+.sources {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid #496b57;
+    color: #ddd;
+    font-size: 13px;
+}
+
+.input-area {
+    display: flex;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+input {
+    flex: 1;
+    padding: 14px;
+    background: #292b35;
+    border: 1px solid #444;
+    border-radius: 9px;
+    color: white;
+    font-size: 15px;
+    outline: none;
+}
+
+button {
+    padding: 12px 22px;
+    background: #6565f5;
+    color: white;
+    border: none;
+    border-radius: 9px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #5050d5;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.clear {
+    background: #393b46;
+    margin-top: 15px;
+}
+
+.footer {
+    text-align: center;
+    color: #999;
+    margin-top: 25px;
+    font-size: 13px;
+}
+
+@media(max-width:600px) {
+
+    .input-area {
+        flex-direction: column;
+    }
+
+    #chatbox {
+        height: 420px;
+    }
+
+    .message {
+        max-width: 95%;
+    }
+
+}
+
+</style>
+
 </head>
+
 <body>
 
-<h2>Women Law Chatbot</h2>
-<input id="q" placeholder="Ask a question..." style="width:300px;" />
-<button onclick="ask()">Ask</button>
+<div class="container">
 
-<p id="answer"></p>
+<h1>⚖️ Women Law & Rights Chatbot</h1>
+
+<p class="subtitle">
+Ask questions about women's legal rights under Indian laws.
+</p>
+
+<div class="chat-container">
+
+<div id="chatbox">
+
+<div class="message bot">
+Welcome to Women Law & Rights Chatbot!
+
+Ask questions related to:
+
+• Dowry Prohibition Act, 1961
+• Domestic Violence Act, 2005
+• Sexual Harassment at Workplace Act, 2013
+• Immoral Traffic (Prevention) Act, 1956
+• Commission of Sati (Prevention) Act, 1987
+• Indecent Representation of Women Act, 1986
+
+I will answer using the available legal documents.
+</div>
+
+</div>
+
+<div class="input-area">
+
+<input
+    type="text"
+    id="q"
+    placeholder="Ask your legal question..."
+    autocomplete="off"
+/>
+
+<button id="askBtn" onclick="ask()">
+Ask
+</button>
+
+</div>
+
+<button class="clear" onclick="clearChat()">
+Clear Chat
+</button>
+
+</div>
+
+<div class="footer">
+
+<hr>
+
+<p>Powered by Women Law RAG Engine</p>
+
+<p>Backend running on Render</p>
+
+<p>This chatbot provides legal information, not professional legal advice.</p>
+
+</div>
+
+</div>
+
 
 <script>
-async function ask() {
-    let question = document.getElementById("q").value;
-    let res = await fetch("https://your-rag-app.onrender.com/ask", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({question})
-    });
-    let data = await res.json();
-    document.getElementById("answer").innerText = data.answer;
+
+// Backend API URL
+const API_URL =
+"https://women-law-rag-bot-2.onrender.com/ask";
+
+const chatbox = document.getElementById("chatbox");
+
+const input = document.getElementById("q");
+
+const askBtn = document.getElementById("askBtn");
+
+
+// Display message
+function addMessage(text, type) {
+
+    const div = document.createElement("div");
+
+    div.className = "message " + type;
+
+    div.textContent = text;
+
+    chatbox.appendChild(div);
+
+    chatbox.scrollTop = chatbox.scrollHeight;
+
+    return div;
+
 }
+
+
+// Display source documents
+function displaySources(parent, sources) {
+
+    if (!Array.isArray(sources) || sources.length === 0) {
+        return;
+    }
+
+    const div = document.createElement("div");
+
+    div.className = "sources";
+
+    const heading = document.createElement("strong");
+
+    heading.textContent = "📚 Sources used:";
+
+    div.appendChild(heading);
+
+    const ul = document.createElement("ul");
+
+    sources.forEach(source => {
+
+        const li = document.createElement("li");
+
+        if (typeof source === "string") {
+            li.textContent = source;
+        } else {
+            li.textContent =
+                source.source || source.name || "Legal document";
+        }
+
+        ul.appendChild(li);
+
+    });
+
+    div.appendChild(ul);
+
+    parent.appendChild(div);
+
+}
+
+
+// Ask backend
+async function ask() {
+
+    const question = input.value.trim();
+
+    if (!question) {
+        return;
+    }
+
+    addMessage(question, "user");
+
+    input.value = "";
+
+    askBtn.disabled = true;
+
+    askBtn.textContent = "Thinking...";
+
+    const loading = addMessage(
+        "Searching legal documents and generating answer...",
+        "bot"
+    );
+
+    try {
+
+        const response = await fetch(API_URL, {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                question: question
+            })
+
+        });
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Server error: " + response.status
+            );
+
+        }
+
+        const data = await response.json();
+
+        loading.remove();
+
+        if (!data.answer) {
+
+            throw new Error("No answer received from backend.");
+
+        }
+
+        const botMessage = addMessage(
+            data.answer,
+            "bot"
+        );
+
+        displaySources(
+            botMessage,
+            data.sources || data.source_documents
+        );
+
+    }
+
+    catch(error) {
+
+        loading.remove();
+
+        addMessage(
+            "Unable to get an answer: " + error.message,
+            "error"
+        );
+
+        console.error(error);
+
+    }
+
+    finally {
+
+        askBtn.disabled = false;
+
+        askBtn.textContent = "Ask";
+
+        input.focus();
+
+    }
+
+}
+
+
+// Enter key support
+input.addEventListener("keydown", function(event) {
+
+    if (event.key === "Enter") {
+        ask();
+    }
+
+});
+
+
+// Clear chat
+function clearChat() {
+
+    chatbox.innerHTML = "";
+
+    addMessage(
+        "Chat cleared. Ask a new legal question.",
+        "bot"
+    );
+
+}
+
 </script>
 
 </body>
+
 </html>
